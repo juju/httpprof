@@ -175,35 +175,56 @@ func (name handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // Index responds to a request for "/debug/pprof/" with an HTML page
 // listing the available profiles.
 func Index(w http.ResponseWriter, r *http.Request) {
-	if strings.HasPrefix(r.URL.Path, "/debug/pprof/") {
-		name := strings.TrimPrefix(r.URL.Path, "/debug/pprof/")
+	index("/debug/pprof/").ServeHTTP(w, r)
+}
+
+var indexTmpl = template.Must(template.New("index").Parse(`<!DOCTYPE html>
+<html>
+<head>
+  <title>pprof</title>
+</head>
+<body>
+  <h1>pprof</h1>
+  <h2>profiles:</h2>
+  <table>
+    {{range .}}
+    <tr>
+      <td style="text-align: right;">{{.Count}}</td>
+      <td><a href="{{.Name}}?debug=1">{{.Name}}</a></td>
+    </tr>
+    {{end}}
+  </table>
+  <p><a href="goroutine?debug=2">full goroutine stack dump</a></p>
+</body>
+</html>
+`))
+
+// IndexAtRoot returns a handler that responds to an HTTP request
+// at the given root path with an HTML page listing the available profiles.
+// A trailing '/' will be added to root if there is not one already there.
+func IndexAtRoot(root string) http.Handler {
+	if !strings.HasSuffix(root, "/") {
+		root += "/"
+	}
+	return index(root)
+}
+
+// index is an http.Handler that is functionally equivilent to Index except
+// that an arbitrary prefix may be used.
+type index string
+
+// ServeHTTP implements http.Handler. ServeHTTP responds with the pprof-
+// formatted profile named by the request after the prefix specified in index
+// has been stripped.
+func (i index) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if strings.HasPrefix(r.URL.Path, string(i)) {
+		name := strings.TrimPrefix(r.URL.Path, string(i))
 		if name != "" {
 			handler(name).ServeHTTP(w, r)
 			return
 		}
 	}
-
-	profiles := pprof.Profiles()
-	if err := indexTmpl.Execute(w, profiles); err != nil {
+	if err := indexTmpl.Execute(w, pprof.Profiles()); err != nil {
 		log.Print(err)
 	}
 }
-
-var indexTmpl = template.Must(template.New("index").Parse(`<html>
-<head>
-<title>/debug/pprof/</title>
-</head>
-/debug/pprof/<br>
-<br>
-<body>
-profiles:<br>
-<table>
-{{range .}}
-<tr><td align=right>{{.Count}}<td><a href="/debug/pprof/{{.Name}}?debug=1">{{.Name}}</a>
-{{end}}
-</table>
-<br>
-<a href="/debug/pprof/goroutine?debug=2">full goroutine stack dump</a><br>
-</body>
-</html>
-`))
