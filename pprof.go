@@ -7,35 +7,6 @@
 // For more information about pprof, see
 // http://code.google.com/p/google-perftools/.
 //
-// The package is typically only imported for the side effect of
-// registering its HTTP handlers.
-// The handled paths all begin with /debug/pprof/.
-//
-// To use pprof, link this package into your program:
-//	import _ "net/http/pprof"
-//
-// If your application is not already running an http server, you
-// need to start one.  Add "net/http" and "log" to your imports and
-// the following code to your main function:
-//
-// 	go func() {
-// 		log.Println(http.ListenAndServe("localhost:6060", nil))
-// 	}()
-//
-// Then use the pprof tool to look at the heap profile:
-//
-//	go tool pprof http://localhost:6060/debug/pprof/heap
-//
-// Or to look at a 30-second CPU profile:
-//
-//	go tool pprof http://localhost:6060/debug/pprof/profile
-//
-// Or to look at the goroutine blocking profile:
-//
-//	go tool pprof http://localhost:6060/debug/pprof/block
-//
-// To view all available profiles, open http://localhost:6060/debug/pprof/
-// in your browser.
 //
 // For a study of the facility in action, visit
 //
@@ -58,13 +29,6 @@ import (
 	"strings"
 	"time"
 )
-
-func init() {
-	http.Handle("/debug/pprof/", http.HandlerFunc(Index))
-	http.Handle("/debug/pprof/cmdline", http.HandlerFunc(Cmdline))
-	http.Handle("/debug/pprof/profile", http.HandlerFunc(Profile))
-	http.Handle("/debug/pprof/symbol", http.HandlerFunc(Symbol))
-}
 
 // Cmdline responds with the running program's
 // command line, with arguments separated by NUL bytes.
